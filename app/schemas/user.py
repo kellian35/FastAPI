@@ -1,12 +1,12 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 class UserCreate(BaseModel):
     username: str
-    email: EmailStr
+    email: str
     full_name: str | None = None
 
 class UserResponse(BaseModel):
     id: str
     username: str
-    email: EmailStr
+    email: str
     full_name: str | None = None
