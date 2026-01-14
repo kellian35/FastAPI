@@ -1,0 +1,9 @@
+python3 -m venv venv        # Crée un environnement virtuel nommé "venv"
+
+source venv/bin/activate    # Active l’environnement virtuel
+
+pip install --upgrade pip   # Mets à jour pip dans l'environnement virtuel
+
+pip install -r requirements.txt  # Installe les dépendances dans cet environnement
+
+uvicorn app.main:app --host 0.0.0.0 --port 8000
