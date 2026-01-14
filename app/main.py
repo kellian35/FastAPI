@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.database.db import init_db
-from app.routers import user
+from app.routers import user, article
 import logging
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -32,6 +32,13 @@ app.include_router(
     user.router,
     prefix="/v1/users",
     tags=["users"],
+    responses={404: {"description": "Not found"}}
+)
+
+app.include_router(
+    article.router,
+    prefix="/v1/articles",
+    tags=["articles"],
     responses={404: {"description": "Not found"}}
 )
 
