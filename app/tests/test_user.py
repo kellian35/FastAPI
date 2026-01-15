@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 if sys.platform.startswith("win"):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def event_loop():
     loop = asyncio.new_event_loop()
     yield loop
@@ -29,9 +29,17 @@ def event_loop():
 @pytest.fixture(scope="module", autouse=True)
 async def setup_db():
     await init_db()
+    print("\nDB initialized before tests")
+    logger.info("DB initialized before tests")
     yield
-    await db["users"].delete_many({})
-    logger.info("Database cleaned up after tests")
+    print("\nCleaning DB after tests...")
+    logger.info("Cleaning DB after tests...")
+    result = await db["users"].delete_many({})
+    print(f"\nDeleted {result.deleted_count} users")
+
+    logger.info(f"Deleted {result.deleted_count} users")
+
+array_user_ids = []
 
 # Tests async avec AsyncClient pour faire des requêtes HTTP
 @pytest.mark.asyncio
@@ -47,6 +55,7 @@ async def test_create_user_success():
     data = response.json()
     assert data["full_name"] == user_data["full_name"]
     assert data["email"] == user_data["email"]
+    array_user_ids.append(data["id"])
     assert "id" in data
     logger.info(f"User created successfully with ID: {data['id']}")
 
@@ -71,6 +80,7 @@ async def test_get_user_success():
     )
     created_user = await create_user(user_create)
     user_id = created_user["id"]
+    array_user_ids.append(user_id)
 
     async with AsyncClient(app=app, base_url="http://test") as ac:
         response = await ac.get(f"/v1/users/{user_id}")
@@ -96,3 +106,19 @@ async def test_get_user_invalid_id():
         response = await ac.get(f"/v1/users/{invalid_id}")
     assert response.status_code == 404
     logger.info("Invalid ID format correctly handled")
+
+
+@pytest.mark.asyncio
+async def test_cleanup_db():
+    logger.info("Cleaning DB explicitly before pytest exit")
+
+    # Convertir en ObjectId si ce ne sont pas déjà des ObjectId
+    object_ids = [ObjectId(uid) if not isinstance(uid, ObjectId) else uid for uid in array_user_ids]
+
+    if object_ids:
+        result = await db["users"].delete_many({"_id": {"$in": object_ids}})
+        logger.info(f"Deleted {result.deleted_count} users")
+        print(f"\nDeleted {result.deleted_count} users")
+    else:
+        logger.info("No user ids to delete")
+        print("No user ids to delete")
