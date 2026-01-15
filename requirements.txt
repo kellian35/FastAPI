@@ -4,3 +4,7 @@ motor==3.1.2
 pydantic==1.10.7
 python-dotenv==1.0.0
 pymongo==4.4.0
+pytest==7.4.0
+pytest-asyncio==0.21.1
+httpx==0.24.1
+python-multipart==0.0.6

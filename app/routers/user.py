@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, status
 from app.schemas.user import UserCreate, UserResponse
 from app.crud.user import create_user, get_user, get_users
 import logging
+from bson.errors import InvalidId
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,12 @@ async def create_user_route(user: UserCreate):
     logger.info(f"Creating new user: {user.email}")
     try:
         created_user = await create_user(user)
+        if not created_user:
+            logger.error("User creation failed in database")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="User creation failed"
+            )
         logger.info(f"User created successfully: {created_user['id']}")
         return created_user
     except Exception as e:
@@ -43,17 +50,18 @@ async def read_user(user_id: str):
             )
         logger.info(f"User fetched successfully: {user_id}")
         return user
-    except Exception as e:
-        logger.error(f"Error fetching user: {str(e)}", exc_info=True)
+    except InvalidId:
+        logger.warning(f"Invalid user ID format: {user_id}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
         )
 
 @router.get(
     "/",
     response_model=list[UserResponse],
-    response_description="List of all users")
+    response_description="List of all users"
+)
 async def read_users():
     logger.info("Fetching all users")
     try:
