@@ -37,3 +37,33 @@ async def get_article(article_id: str):
     except Exception as e:
         logger.error(f"Database error fetching article: {str(e)}", exc_info=True)
         raise
+
+async def get_articles():
+    logger.debug("Fetching all articles from database")
+    try:
+        articles = await db.articles.find().to_list(length=None)
+        for article in articles:
+            article["id"] = str(article["_id"])
+            del article["_id"]
+        logger.debug(f"Fetched {len(articles)} articles from database")
+        return articles
+    except Exception as e:
+        logger.error(f"Database error fetching articles: {str(e)}", exc_info=True)
+        raise
+
+async def delete_article(article_id: str):
+    logger.debug(f"Deleting article from database: {article_id}")
+    try:
+        result = await db.articles.delete_one({"_id": ObjectId(article_id)})
+        if result.deleted_count == 1:
+            logger.debug(f"Article deleted from database: {article_id}")
+            return True
+        else:
+            logger.debug(f"Article not found for deletion: {article_id}")
+            return False
+    except InvalidId:
+        logger.warning(f"Invalid article ID format for deletion: {article_id}")
+        return False
+    except Exception as e:
+        logger.error(f"Database error deleting article: {str(e)}", exc_info=True)
+        raise

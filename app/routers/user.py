@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from app.schemas.user import UserCreate, UserResponse
-from app.crud.user import create_user, get_user
+from app.crud.user import create_user, get_user, get_users
 import logging
 
 logger = logging.getLogger(__name__)
@@ -45,6 +45,22 @@ async def read_user(user_id: str):
         return user
     except Exception as e:
         logger.error(f"Error fetching user: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+@router.get(
+    "/",
+    response_model=list[UserResponse],
+    response_description="List of all users")
+async def read_users():
+    logger.info("Fetching all users")
+    try:
+        users = await get_users()
+        return users
+    except Exception as e:
+        logger.error(f"Error fetching users: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error"
